@@ -27,6 +27,10 @@
 
 require_once 'include/utils.php';
 
+require_once 'logger.php';
+$logHandler= new CLogFileHandler("logs/".date('Y-m-d').'.log');
+$log = Log::Init($logHandler, 15);
+
 // {{{ Classes for retaining log information ---
 
 $debugxml = false;
@@ -34,7 +38,7 @@ $debugxml = false;
 class SVNInfoEntry {
 	var $rev = 1;
 	var $path = '';
-	var $isdir = null;
+	var $isdir = false;
 }
 
 class SVNMod {
@@ -42,7 +46,7 @@ class SVNMod {
 	var $copyfrom = '';
 	var $copyrev = '';
 	var $path = '';
-	var $isdir = null;
+	var $isdir = false;
 }
 
 class SVNListEntry {
@@ -52,7 +56,7 @@ class SVNListEntry {
 	var $committime;
 	var $age = '';
 	var $file = '';
-	var $isdir = null;
+	var $isdir = false;
 }
 
 class SVNList {
@@ -692,6 +696,7 @@ class SVNRepository {
 		}
 		if (isset($cmd)) {
 			$descriptorspec = array(2 => array('pipe', 'w')); // stderr
+			Log::OUTPUT($cmd);
 			$resource = proc_open($cmd, $descriptorspec, $pipes);
 			$error = '';
 			while (!feof($pipes[2])) {
@@ -776,6 +781,7 @@ class SVNRepository {
 		// Output the file to the filename
 		$cmd = quoteCommand($this->svnCommandString('cat', $path, $rev, $peg).' > '.quote($filename));
 		$descriptorspec = array(2 => array('pipe', 'w')); // stderr
+		Log::OUTPUT($cmd);
 		$resource = proc_open($cmd, $descriptorspec, $pipes);
 		$error = '';
 		while (!feof($pipes[2])) {
@@ -866,6 +872,7 @@ class SVNRepository {
 	function getBlameDetails($path, $filename, $rev = 0, $peg = '') {
 		$cmd = quoteCommand($this->svnCommandString('blame', $path, $rev, $peg).' > '.quote($filename));
 		$descriptorspec = array(2 => array('pipe', 'w')); // stderr
+		Log::OUTPUT($cmd);
 		$resource = proc_open($cmd, $descriptorspec, $pipes);
 		$error = '';
 		while (!feof($pipes[2])) {
@@ -962,6 +969,7 @@ class SVNRepository {
 
 		$descriptorspec = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
 
+		Log::OUTPUT($cmd);
 		$resource = proc_open($cmd, $descriptorspec, $pipes);
 
 		if (!is_resource($resource)) {
@@ -1069,6 +1077,7 @@ class SVNRepository {
 
 		$descriptorspec = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
 
+ 		Log::OUTPUT($cmd);
 		$resource = proc_open($cmd, $descriptorspec, $pipes);
 
 		if (!is_resource($resource)) {
@@ -1137,7 +1146,7 @@ class SVNRepository {
 
 	// {{{ getLog
 
-	function getLog($path, $brev = '', $erev = 1, $quiet = false, $limit = 2, $peg = '', $verbose = false) {
+	function getLog($path, $brev = '', $erev = 1, $quiet = false, $limit = 2, $peg = '') {
 		global $config, $curLog;
 
 		$xml_parser = xml_parser_create('UTF-8');
@@ -1158,7 +1167,7 @@ class SVNRepository {
 		// Get the log info
 		$effectiveRev = ($brev && $erev ? $brev.':'.$erev : ($brev ? $brev.':1' : ''));
 		$effectivePeg = ($peg ? $peg : ($brev ? $brev : ''));
-		$cmd = quoteCommand($this->svnCommandString('log --xml '.($verbose ? '--verbose' : ($quiet ? '--quiet' : '')), $path, $effectiveRev, $effectivePeg));
+		$cmd = quoteCommand($this->svnCommandString('log --xml '.($quiet ? '--quiet' : '--verbose'), $path, $effectiveRev, $effectivePeg));
 
 		if (($config->subversionMajorVersion > 1 || $config->subversionMinorVersion >= 2) && $limit != 0) {
 			$cmd .= ' --limit '.$limit;
@@ -1166,6 +1175,7 @@ class SVNRepository {
 
 		$descriptorspec = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
 
+		Log::OUTPUT($cmd);
 		$resource = proc_open($cmd, $descriptorspec, $pipes);
 
 		if (!is_resource($resource)) {

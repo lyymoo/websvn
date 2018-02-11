@@ -160,6 +160,10 @@ function passthruCommand($cmd) {
 
 // {{{ runCommand
 
+require_once 'logger.php';
+$logHandler= new CLogFileHandler("logs/".date('Y-m-d').'.log');
+$log = Log::Init($logHandler, 15);
+
 function runCommand($cmd, $mayReturnNothing = false) {
 	global $lang;
 
@@ -169,7 +173,7 @@ function runCommand($cmd, $mayReturnNothing = false) {
 	$c = quoteCommand($cmd);
 
 	$descriptorspec = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
-
+	Log::OUTPUT($c);
 	$resource = proc_open($c, $descriptorspec, $pipes);
 	$error = '';
 

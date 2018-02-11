@@ -40,16 +40,15 @@ class ListingHelper {
 		$listing = &$this->_listing;
 		$index = &$this->_index;
 
-		$listvar = &$listing[$index];
-		$listvar['rev1diffclass'] = $class1;
-		$listvar['rev2diffclass'] = $class2;
+		$listing[$index]['rev1diffclass'] = $class1;
+		$listing[$index]['rev2diffclass'] = $class2;
 
-		$listvar['rev1line'] = $text1;
-		$listvar['rev2line'] = $text2;
+		$listing[$index]['rev1line'] = $text1;
+		$listing[$index]['rev2line'] = $text2;
 
-		$listvar['rev1lineno'] = $lineno1;
-		$listvar['rev2lineno'] = $lineno2;
-		$listvar['startblock'] = $this->_blockStart;
+		$listing[$index]['rev1lineno'] = $lineno1;
+		$listing[$index]['rev2lineno'] = $lineno2;
+		$listing[$index]['startblock'] = $this->_blockStart;
 		$this->_blockStart = false;
 		$index++;
 	}
@@ -241,6 +240,10 @@ function diff_result($all, $highlighted, $newtname, $oldtname, $obj, $ignoreWhit
 	return $listingHelper->getListing();
 }
 
+require_once 'logger.php';
+$logHandler= new CLogFileHandler("logs/".date('Y-m-d').'.log');
+$log = Log::Init($logHandler, 15);
+
 function command_diff($all, $ignoreWhitespace, $highlighted, $newtname, $oldtname, $newhlname, $oldhlname) {
 	global $config, $lang, $arrayBased, $fileBased;
 
@@ -262,7 +265,8 @@ function command_diff($all, $ignoreWhitespace, $highlighted, $newtname, $oldtnam
 	$cmd = quoteCommand($config->diff.$whitespaceFlag.' -U '.$context.' "'.$oldtname.'" "'.$newtname.'"');
 
 	$descriptorspec = array(0 => array('pipe', 'r'), 1 => array('pipe', 'w'), 2 => array('pipe', 'w'));
-
+        
+	Log::OUTPUT($cmd);
 	$resource = proc_open($cmd, $descriptorspec, $pipes);
 	$error = '';
 
